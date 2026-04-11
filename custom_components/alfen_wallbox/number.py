@@ -86,7 +86,7 @@ ALFEN_NUMBER_TYPES: Final[tuple[AlfenNumberDescription, ...]] = (
     ),
     AlfenNumberDescription(
         key="max_station_current",
-        name="Max. Station Current",
+        name="Station maximum Current",
         state=None,
         icon="mdi:current-ac",
         assumed_state=False,
@@ -146,7 +146,7 @@ ALFEN_NUMBER_TYPES: Final[tuple[AlfenNumberDescription, ...]] = (
     ),
     AlfenNumberDescription(
         key="dp_light_intensity",
-        name="Display Light Intensity %",
+        name="Display & LED Brightness",
         state=None,
         icon="mdi:lightbulb",
         assumed_state=False,
@@ -220,36 +220,6 @@ ALFEN_NUMBER_TYPES: Final[tuple[AlfenNumberDescription, ...]] = (
         round_digits=None,
     ),
     AlfenNumberDescription(
-        key="ws_wired_socket_timeout",
-        name="WS Wired websocket timeout (s)",
-        state=None,
-        icon="mdi:timer-sand",
-        assumed_state=False,
-        device_class=None,
-        native_min_value=0,
-        native_max_value=30,
-        native_step=1,
-        custom_mode=None,
-        unit_of_measurement=UnitOfTime.SECONDS,
-        api_param="208B_1",
-        round_digits=None,
-    ),
-    AlfenNumberDescription(
-        key="ws_mobile_socket_timeout",
-        name="WS Mobile websocket timeout (s)",
-        state=None,
-        icon="mdi:timer-sand",
-        assumed_state=False,
-        device_class=None,
-        native_min_value=0,
-        native_max_value=30,
-        native_step=1,
-        custom_mode=None,
-        unit_of_measurement=UnitOfTime.SECONDS,
-        api_param="208B_2",
-        round_digits=None,
-    ),
-    AlfenNumberDescription(
         key="ocpp_wired_ocpp_send_timeout",
         name="OCPP Wired OCPP send timeout (s)",
         state=None,
@@ -306,7 +276,7 @@ ALFEN_NUMBER_TYPES: Final[tuple[AlfenNumberDescription, ...]] = (
         native_step=1,
         custom_mode=None,
         unit_of_measurement=UnitOfTime.SECONDS,
-        api_param="208E_1",
+        api_param="208E_2",
         round_digits=None,
     ),
     AlfenNumberDescription(
@@ -538,7 +508,8 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     if coordinator.device.get_number_of_sockets() == 2:
         numbers = [
-            AlfenNumber(entry, description) for description in ALFEN_NUMBER_DUAL_SOCKET_TYPES
+            AlfenNumber(entry, description)
+            for description in ALFEN_NUMBER_DUAL_SOCKET_TYPES
         ]
         async_add_entities(numbers)
 
@@ -589,7 +560,9 @@ class AlfenNumber(AlfenEntity, NumberEntity):
         self._attr_assumed_state = description.assumed_state
         self._attr_device_class = description.device_class
         self._attr_icon = description.icon
-        if description.custom_mode is None:  # issue with pre Home Assistant Core 2023.6 versions
+        if (
+            description.custom_mode is None
+        ):  # issue with pre Home Assistant Core 2023.6 versions
             self._attr_mode = NumberMode.SLIDER
         else:
             self._attr_mode = description.custom_mode
@@ -629,7 +602,9 @@ class AlfenNumber(AlfenEntity, NumberEntity):
                 round(float(value), self.entity_description.round_digits),
             )
         else:
-            await self.coordinator.device.set_value(self.entity_description.api_param, int(value))
+            await self.coordinator.device.set_value(
+                self.entity_description.api_param, int(value)
+            )
         self._set_current_option()
 
     @property
@@ -637,9 +612,9 @@ class AlfenNumber(AlfenEntity, NumberEntity):
         """Return the default attributes of the element."""
         if self.entity_description.api_param in self.coordinator.device.properties:
             return {
-                "category": self.coordinator.device.properties[self.entity_description.api_param][
-                    CAT
-                ]
+                "category": self.coordinator.device.properties[
+                    self.entity_description.api_param
+                ][CAT]
             }
 
         return None
@@ -656,7 +631,9 @@ class AlfenNumber(AlfenEntity, NumberEntity):
             if self.entity_description.key == "lb_solar_charging_comfort_level":
                 if self.coordinator.device.max_allowed_phases == 3:
                     self._attr_max_value = self.entity_description.native_max_value
-                    self._attr_native_max_value = self.entity_description.native_max_value
+                    self._attr_native_max_value = (
+                        self.entity_description.native_max_value
+                    )
                 else:
                     self._attr_max_value = 3300
                     self._attr_native_max_value = 3300
